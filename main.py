@@ -24,6 +24,7 @@ legal=[]
 white_king_position=[7,4]
 black_king_position=[0,4]
 move=0
+castling=False
 
 def draw_board():
     for i in range(8):
@@ -123,30 +124,35 @@ def is_piece(move):
         return True
     
 def castle():
-    global row,col,piece
-    k_col=selected_square[1]
-    print(col)
-    if col==6:
-        for i in range(2):
-            k_col+=1
-            if is_piece([row,k_col]):
-                return
-        temp=board[row][7]
-        board[row][4]=None
-        board[row][7]=None
-        board[row][6]=piece
-        board[row][5]=temp
-    if col==2:
-        for i in range(3):
-            k_col-=1
-            if is_piece([row,k_col]):
-                return
-        temp=board[row][0]
-        board[row][4]=None
-        board[row][0]=None
-        board[row][1]=piece
-        board[row][2]=temp
-    
+    global selected_square,piece,board,castling
+    row=selected_square[0]
+    moves=[]
+    k_side=True
+    Q_side=True
+    attacks=all_attacks(piece,board)
+    for column in (2,6):
+        if column==6:
+            k_col=4
+            for _ in range(2):
+                k_col+=1
+                if (is_piece([row,k_col])) or ([row,k_col] in attacks):
+                    k_side=False
+                    break
+        elif column==2:
+            k_col=4
+            for _ in range(2):
+                k_col-=1
+                if (is_piece([row,k_col])) or ([row,k_col] in attacks):
+                    Q_side=False
+                    break
+    if k_side:
+        moves.append([row,6])
+    if Q_side:
+        moves.append([row,2])
+    if moves!=None:
+        castling=True
+    return moves
+        
 
 def own_piece(row,col,board):
     global white,selected_square,black
@@ -164,15 +170,30 @@ def move_piece():
     dummy_board[row][col]=piece
     if move%2==0:
         if in_check(white_king_position[0],white_king_position[1],'♔',dummy_board):
-            print('True')
             return
     elif move%2!=0:
         if in_check(black_king_position[0],white_king_position[1],'♚',dummy_board):
-            print('True')
             return
-    board[selected_square[0]][selected_square[1]]=None
-    board[row][col]=piece
-    move+=1
+    if piece=='♔' or piece=='♚':
+        if castling==True:
+            if col==6:
+                temp=board[row][7]
+                board[row][4]=None
+                board[row][7]=None
+                board[row][6]=piece
+                board[row][5]=temp
+                move+=1
+            elif col==2:
+                temp=board[row][0]
+                board[row][4]=None
+                board[row][0]=None
+                board[row][1]=piece
+                board[row][2]=temp
+                move+=1
+    else:
+        board[selected_square[0]][selected_square[1]]=None
+        board[row][col]=piece
+        move+=1
 
 def pawn_promotion():
     global row,col,board
@@ -221,6 +242,8 @@ class Highlight:
                 king=[king[0]+up[0],king[1]+up[1]]
                 if (king[0]>=0 and king[0]<=7 and king[1]<=7 and king[1]>=0) and not own_piece(king[0],king[1],board=self.board):
                     self.legal_moves.append(king)
+        castle_move=castle()
+        self.legal_moves.extend(castle_move)
         return self.legal_moves
     def pawn(self):
             pawn=[self.row,self.col]
