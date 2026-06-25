@@ -92,7 +92,6 @@ def click(event):
             move_piece()
             draw_board()
             draw_piece()
-            move+=1
         if promote:
             pawn_promotion()
             promote=False
@@ -159,18 +158,21 @@ def own_piece(row,col,board):
         return False
     
 def move_piece():
-    global selected_square,row,col,board,piece,white_king_position,black_king_position
+    global selected_square,row,col,board,piece,white_king_position,black_king_position,move
     dummy_board=[row.copy() for row in board]
     dummy_board[selected_square[0]][selected_square[1]]=None
     dummy_board[row][col]=piece
     if move%2==0:
         if in_check(white_king_position[0],white_king_position[1],'♔',dummy_board):
+            print('True')
             return
     elif move%2!=0:
         if in_check(black_king_position[0],white_king_position[1],'♚',dummy_board):
+            print('True')
             return
     board[selected_square[0]][selected_square[1]]=None
     board[row][col]=piece
+    move+=1
 
 def pawn_promotion():
     global row,col,board
@@ -313,6 +315,11 @@ class Highlight:
                 bottom_left[1]-=1
                 if bottom_left[0]==8 or bottom_left[1]==-1 or own_piece(bottom_left[0],bottom_left[1],board=self.board):
                     bottom_left=-1
+            
+            for move in (up,down,left,right,top_left,top_right,bottom_left,bottom_right):
+                if move!=-1:
+                    self.legal_moves.append(move.copy())
+
             if top_left!=-1 and self.board[top_left[0]][top_left[1]]!=None:
                 top_left=-1
             if top_right!=-1 and self.board[top_right[0]][top_right[1]]!=None:
@@ -321,10 +328,6 @@ class Highlight:
                 bottom_left=-1
             if bottom_right!=-1 and self.board[bottom_right[0]][bottom_right[1]]!=None:
                 bottom_right=-1
-            
-            for move in (up,down,left,right,top_left,top_right,bottom_left,bottom_right):
-                if move!=-1:
-                    self.legal_moves.append(move.copy())
 
             if up!=-1 and self.board[up[0]][up[1]]!=None:
                     up=-1
