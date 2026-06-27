@@ -10,10 +10,10 @@ Currently under development
 - Castling
 - Pawn Promotion
 - Move validation and higlighting legal moves
-- Check detection 
+- Check detection
+- Checkmate Detection 
 
 # Planned Features
-- Checkmate Detection
 - Stalemate Detection
 - AI Opponent
 
