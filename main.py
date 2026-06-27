@@ -42,7 +42,7 @@ def draw_board():
 
 
 def click(event):
-    global size,selected_square,col,row,board,piece,can_move,legal,white_king_position,black_king_position,move
+    global size,selected_square,col,row,board,piece,can_move,legal,white_king_position,black_king_position,move,white,black
     promote=False
     row=event.y//size
     col=event.x//size
@@ -80,7 +80,8 @@ def click(event):
         if piece=='♟' or piece=='♙':
             if [row,col] in legal:
                 can_move=True
-        if own_piece(row,col,board):
+        color='white' if piece in white else 'black'
+        if own_piece(row,col,color,board):
             can_move=False
         if move%2==0 and piece not in ('♖','♘','♗','♕','♔','♗','♘','♖','♙'):
             can_move=False
@@ -99,6 +100,7 @@ def click(event):
         selected_square=None
         piece=''
         can_move=False
+        game_end()
         
 
 def draw_piece():
@@ -157,11 +159,12 @@ def castle():
     return moves
         
 
-def own_piece(row,col,board):
+def own_piece(row,col,color,board):
     global white,selected_square,black
-    if board[selected_square[0]][selected_square[1]] in black and board[row][col] in black:
+    if color=='black' and board[row][col] in black:
         return True
-    elif board[selected_square[0]][selected_square[1]] in white and board[row][col] in white:
+    # elif board[selected_square[0]][selected_square[1]] in white and board[row][col] in white:
+    elif color=='white' and board[row][col] in white:
         return True
     else: 
         return False
@@ -236,20 +239,21 @@ def pawn_promotion():
 
 class Highlight:
     def __init__(self,row,col,piece,board):
-        global size,selected_square
+        global size,selected_square,white,black
         self.row=row
         self.col=col
         self.piece=piece
         self.size=size
         self.legal_moves=[]
         self.board=board
+        self.color='white' if piece in white else 'black'
     def king(self):
         king=[self.row-1,self.col-1]
         update=[[0,1],[1,0],[0,-1],[-1,0]]
         for up in update:
             for _ in range(2):
                 king=[king[0]+up[0],king[1]+up[1]]
-                if (king[0]>=0 and king[0]<=7 and king[1]<=7 and king[1]>=0) and not own_piece(king[0],king[1],board=self.board):
+                if (king[0]>=0 and king[0]<=7 and king[1]<=7 and king[1]>=0) and not own_piece(king[0],king[1],self.color,board=self.board):
                     self.legal_moves.append(king)
         castle_move=castle()
         if piece=='♔' and white_king_moved==False:
@@ -264,9 +268,9 @@ class Highlight:
                 self.legal_moves.append([pawn[0]+update,pawn[1]])
                 if ((self.piece=='♙' and pawn[0]==6) or (self.piece=='♟' and pawn[0]==1)) and self.board[pawn[0]+(2*update)][pawn[1]]==None:
                     self.legal_moves.append([pawn[0]+(2*update),pawn[1]])
-            if (pawn[1]+1<=7 and pawn[1]+1>=0 and pawn[0]+update<=7 and pawn[0]+update>=0) and self.board[pawn[0]+update][pawn[1]+1]!= None and not own_piece(pawn[0]+update,pawn[1]+1,board=self.board):
+            if (pawn[1]+1<=7 and pawn[1]+1>=0 and pawn[0]+update<=7 and pawn[0]+update>=0) and self.board[pawn[0]+update][pawn[1]+1]!= None and not own_piece(pawn[0]+update,pawn[1]+1,self.color,board=self.board):
                 self.legal_moves.append([pawn[0]+update,pawn[1]+1])
-            if (pawn[1]-1<=7 and pawn[1]-1>=0 and pawn[0]+update<=7 and pawn[0]+update>=0) and self.board[pawn[0]+update][pawn[1]-1]!= None and not own_piece(pawn[0]+update,pawn[1]-1,board=self.board):
+            if (pawn[1]-1<=7 and pawn[1]-1>=0 and pawn[0]+update<=7 and pawn[0]+update>=0) and self.board[pawn[0]+update][pawn[1]-1]!= None and not own_piece(pawn[0]+update,pawn[1]-1,self.color,board=self.board):
                 self.legal_moves.append([pawn[0]+update,pawn[1]-1])
             return self.legal_moves
     def pawn_attack(self):
@@ -284,11 +288,11 @@ class Highlight:
             offset2=(-2,2)
             for row in offset1:
                 for col in offset2:
-                    if (knight_sq[1]+col<=7 and knight_sq[1]+col>=0 and knight_sq[0]+row>=0 and knight_sq[0]+row<=7) and (not own_piece(knight_sq[0]+row,knight_sq[1]+col,board=self.board)):
+                    if (knight_sq[1]+col<=7 and knight_sq[1]+col>=0 and knight_sq[0]+row>=0 and knight_sq[0]+row<=7) and (not own_piece(knight_sq[0]+row,knight_sq[1]+col,self.color,board=self.board)):
                         self.legal_moves.append([knight_sq[0]+row,knight_sq[1]+col])
             for row in offset2:
                 for col in offset1:
-                    if (knight_sq[1]+col<=7 and knight_sq[1]+col>=0 and knight_sq[0]+row>=0 and knight_sq[0]+row<=7) and (not own_piece(knight_sq[0]+row,knight_sq[1]+col,board=self.board)):
+                    if (knight_sq[1]+col<=7 and knight_sq[1]+col>=0 and knight_sq[0]+row>=0 and knight_sq[0]+row<=7) and (not own_piece(knight_sq[0]+row,knight_sq[1]+col,self.color,board=self.board)):
                         self.legal_moves.append([knight_sq[0]+row,knight_sq[1]+col])
             return self.legal_moves
     def other(self):
@@ -310,45 +314,45 @@ class Highlight:
                 up[0]-=1
                 if up[0]==-1:
                     up=-1
-                elif own_piece(up[0],up[1],board=self.board):
+                elif own_piece(up[0],up[1],self.color,board=self.board):
                     up=-1
             if down!=-1:
                 down[0]+=1
                 if down[0]==8:
                     down=-1
-                elif own_piece(down[0],down[1],board=self.board):
+                elif own_piece(down[0],down[1],self.color,board=self.board):
                     down=-1
             if left!=-1:
                 left[1]-=1
                 if left[1]==-1:
                     left=-1
-                elif own_piece(left[0],left[1],board=self.board):
+                elif own_piece(left[0],left[1],self.color,board=self.board):
                     left=-1
             if right!=-1:
                 right[1]+=1
                 if right[1]==8:
                     right=-1
-                elif own_piece(right[0],right[1],board=self.board):
+                elif own_piece(right[0],right[1],self.color,board=self.board):
                     right=-1
             if top_right!=-1:
                 top_right[0]-=1
                 top_right[1]+=1
-                if top_right[0]==-1 or top_right[1]==8 or own_piece(top_right[0],top_right[1],board=self.board):
+                if top_right[0]==-1 or top_right[1]==8 or own_piece(top_right[0],top_right[1],self.color,board=self.board):
                     top_right=-1
             if top_left!=-1:
                 top_left[0]-=1
                 top_left[1]-=1
-                if top_left[0]==-1 or top_left[1]==-1 or own_piece(top_left[0],top_left[1],board=self.board):
+                if top_left[0]==-1 or top_left[1]==-1 or own_piece(top_left[0],top_left[1],self.color,board=self.board):
                     top_left=-1
             if bottom_right!=-1:
                 bottom_right[0]+=1
                 bottom_right[1]+=1
-                if bottom_right[0]==8 or bottom_right[1]==8 or own_piece(bottom_right[0],bottom_right[1],board=self.board):
+                if bottom_right[0]==8 or bottom_right[1]==8 or own_piece(bottom_right[0],bottom_right[1],self.color,board=self.board):
                     bottom_right=-1
             if bottom_left!=-1:
                 bottom_left[0]+=1
                 bottom_left[1]-=1
-                if bottom_left[0]==8 or bottom_left[1]==-1 or own_piece(bottom_left[0],bottom_left[1],board=self.board):
+                if bottom_left[0]==8 or bottom_left[1]==-1 or own_piece(bottom_left[0],bottom_left[1],self.color,board=self.board):
                     bottom_left=-1
             
             for move in (up,down,left,right,top_left,top_right,bottom_left,bottom_right):
@@ -433,6 +437,31 @@ def highlight(row,col,piece,board):
                 canvas.create_text((moves[1]*size)+(size//2),(moves[0]*size)+(size//2),text='●',font=('Arial',25),fill='white')
                 legal_moves.append(moves)
         return legal_moves
+
+def game_end():
+    global board,white_king_position,black_king_position
+    if move%2==0:
+        pieces=('♖','♘','♗','♕','♗','♘','♖','♙')  #'♔'
+        position=white_king_position.copy()
+        king='♔'
+    else:
+        pieces=('♟','♜','♞','♝','♛','♝','♞','♜')  #'♚'
+        position=black_king_position.copy()
+        king='♚'
+    for piece in pieces:
+        location=where_piece(piece,board)
+        for row,col in location:
+            moves=Highlight(row,col,piece,board)
+            legal_moves=moves.moves_legal()
+            for n_row,n_col in legal_moves:
+                dummy_board=[row.copy() for row in board]
+                dummy_board[row][col]=None
+                dummy_board[n_row][n_col]=piece
+                if not in_check(position[0],position[1],king,board):
+                    return
+    print("Checkmate")
+
+
 
 create_board()
 draw_board()
