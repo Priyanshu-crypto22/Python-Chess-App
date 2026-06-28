@@ -25,6 +25,7 @@ white_king_position=[7,4]
 black_king_position=[0,4]
 move=0
 castling=False
+stalemated=False
 
 def draw_board():
     for i in range(8):
@@ -42,7 +43,7 @@ def draw_board():
 
 
 def click(event):
-    global size,selected_square,col,row,board,piece,can_move,legal,white_king_position,black_king_position,move,white,black
+    global size,selected_square,col,row,board,piece,can_move,legal,white_king_position,black_king_position,move,white,black,stalemated
     promote=False
     row=event.y//size
     col=event.x//size
@@ -101,7 +102,18 @@ def click(event):
         piece=''
         can_move=False
         if checkmate():
-            restart()
+            if move%2==0:
+                if in_check(white_king_position[0],white_king_position[1],'♔',board):
+                    restart()
+                else:
+                    stalemated=True
+                    restart()
+            else:
+                if in_check(black_king_position[0],black_king_position[1],'♚',board):
+                    restart()
+                else:
+                    stalemated=True
+                    restart()
         
 
 def draw_piece():
@@ -463,7 +475,7 @@ def checkmate():
     return True
 
 def restart():
-    global move
+    global move,stalemated
     def new_game():
         global board
         board=[[None for _ in range(8)] for _ in range(8)]
@@ -471,7 +483,9 @@ def restart():
         draw_board()
         draw_piece()
         box.destroy()
-    if move%2==0:
+    if stalemated==True:
+        str='Draw By Stalemate'
+    elif move%2==0:
         str='Black WINS by Checkmate'
     else:
         str='White WINS by Checkmate'
@@ -484,6 +498,7 @@ def restart():
     label.grid(row=0,column=0,columnspan=2)
     reset.grid(row=1,column=0)
     end.grid(row=1,column=1)
+
 
 
 

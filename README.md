@@ -12,9 +12,10 @@ Currently under development
 - Move validation and higlighting legal moves
 - Check detection
 - Checkmate Detection 
+- Stalemate Detection
 
 # Planned Features
-- Stalemate Detection
+- En Passant
 - AI Opponent
 
 # Technologies Used
