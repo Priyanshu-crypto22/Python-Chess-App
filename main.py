@@ -100,7 +100,8 @@ def click(event):
         selected_square=None
         piece=''
         can_move=False
-        game_end()
+        if checkmate():
+            restart()
         
 
 def draw_piece():
@@ -438,7 +439,7 @@ def highlight(row,col,piece,board):
                 legal_moves.append(moves)
         return legal_moves
 
-def game_end():
+def checkmate():
     global board,white_king_position,black_king_position
     if move%2==0:
         pieces=('♖','♘','♗','♕','♗','♘','♖','♙')  #'♔'
@@ -458,8 +459,31 @@ def game_end():
                 dummy_board[row][col]=None
                 dummy_board[n_row][n_col]=piece
                 if not in_check(position[0],position[1],king,board):
-                    return
-    print("Checkmate")
+                    return False
+    return True
+
+def restart():
+    global move
+    def new_game():
+        global board
+        board=[[None for _ in range(8)] for _ in range(8)]
+        create_board()
+        draw_board()
+        draw_piece()
+        box.destroy()
+    if move%2==0:
+        str='Black WINS by Checkmate'
+    else:
+        str='White WINS by Checkmate'
+    box=tk.Toplevel(window)
+    # box.geometry('250x250')
+    label=tk.Label(box,text=str,font=('Arial',15))
+    box.title("GAME OVER")
+    reset=tk.Button(box,text='Restart',font=('Arial',15),command=new_game)
+    end=tk.Button(box,text='Exit',font=('Arial',15),command=exit)
+    label.grid(row=0,column=0,columnspan=2)
+    reset.grid(row=1,column=0)
+    end.grid(row=1,column=1)
 
 
 
