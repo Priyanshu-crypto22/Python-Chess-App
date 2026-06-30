@@ -98,9 +98,6 @@ def click(event):
         if promote:
             pawn_promotion()
             promote=False
-        selected_square=None
-        piece=''
-        can_move=False
         if checkmate():
             if move%2==0:
                 if in_check(white_king_position[0],white_king_position[1],'♔',board):
@@ -114,6 +111,9 @@ def click(event):
                 else:
                     stalemated=True
                     restart()
+        selected_square=None
+        piece=''
+        can_move=False
         
 
 def draw_piece():
@@ -470,12 +470,12 @@ def checkmate():
                 dummy_board=[row.copy() for row in board]
                 dummy_board[row][col]=None
                 dummy_board[n_row][n_col]=piece
-                if not in_check(position[0],position[1],king,board):
+                if not in_check(position[0],position[1],king,dummy_board):
                     return False
     return True
 
 def restart():
-    global move,stalemated
+    global move,stalemated,move,white_king_moved,black_king_moved,white_king_position,black_king_position,castling
     def new_game():
         global board
         board=[[None for _ in range(8)] for _ in range(8)]
@@ -489,6 +489,14 @@ def restart():
         str='Black WINS by Checkmate'
     else:
         str='White WINS by Checkmate'
+    move=0
+    white_king_moved=False
+    black_king_moved=False
+    white_king_position=[7,4]
+    black_king_position=[0,4]
+    move=0
+    castling=False
+    stalemated=False
     box=tk.Toplevel(window)
     # box.geometry('250x250')
     label=tk.Label(box,text=str,font=('Arial',15))
