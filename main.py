@@ -26,6 +26,8 @@ black_king_position=[0,4]
 move=0
 castling=False
 stalemated=False
+last_piece=''
+en_passant=False
 
 def draw_board():
     for i in range(8):
@@ -183,7 +185,7 @@ def own_piece(row,col,color,board):
         return False
     
 def move_piece():
-    global selected_square,row,col,board,piece,white_king_position,white_king_moved,black_king_moved,move
+    global selected_square,row,col,board,piece,white_king_position,white_king_moved,black_king_moved,move,last_piece,last_move,en_passant
     dummy_board=[row.copy() for row in board]
     dummy_board[selected_square[0]][selected_square[1]]=None
     dummy_board[row][col]=piece
@@ -202,6 +204,8 @@ def move_piece():
                 board[row][6]=piece
                 board[row][5]=temp
                 move+=1
+                last_piece=piece
+                last_move=[row,col]
                 return
             elif col==2:
                 temp=board[row][0]
@@ -210,10 +214,25 @@ def move_piece():
                 board[row][1]=piece
                 board[row][2]=temp
                 move+=1
+                last_piece=piece
+                last_move=[row,col]
                 return
-    board[selected_square[0]][selected_square[1]]=None
-    board[row][col]=piece
-    move+=1
+    elif (piece=='♙' or piece=='♟') and en_passant==True:
+        if selected_square[1]!=col:
+            board[selected_square[0]][col]=None
+            board[selected_square[0]][selected_square[1]]=None
+            board[row][col]=piece
+            move+=1
+            last_piece=piece
+            last_move=[row,col]
+            en_passant=False
+            return
+    else:
+        board[selected_square[0]][selected_square[1]]=None
+        board[row][col]=piece
+        move+=1
+        last_piece=piece
+        last_move=[row,col]
     if piece=='♔':
         white_king_moved=True
     elif piece=='♚':
@@ -251,10 +270,10 @@ def pawn_promotion():
         knight_button.grid(row=0,column=3)
 
 class Highlight:
-    def __init__(self,row,col,piece,board):
-        global size,selected_square,white,black
-        self.row=row
-        self.col=col
+    def __init__(self,r,c,piece,board):
+        global size,selected_square,white,black,row,col,last_piece,white_king_position,black_king_position,last_move
+        self.row=r
+        self.col=c
         self.piece=piece
         self.size=size
         self.legal_moves=[]
@@ -269,12 +288,13 @@ class Highlight:
                 if (king[0]>=0 and king[0]<=7 and king[1]<=7 and king[1]>=0) and not own_piece(king[0],king[1],self.color,board=self.board):
                     self.legal_moves.append(king)
         castle_move=castle()
-        if piece=='♔' and white_king_moved==False:
+        if piece=='♔' and white_king_moved==False and not in_check(white_king_position[0],white_king_position[1],'♔',board):
             self.legal_moves.extend(castle_move)
-        elif piece=='♚' and black_king_moved==False:
+        elif piece=='♚' and black_king_moved==False and not in_check(black_king_position[0],white_king_position[1],'♚',board):
             self.legal_moves.extend(castle_move)
         return self.legal_moves
     def pawn(self):
+            global en_passant
             pawn=[self.row,self.col]
             update=1 if self.piece=='♟' else -1
             if (pawn[0]+update>=0 and pawn[0]+update<=7 and pawn[1]<=7 and pawn[1]>=0) and self.board[pawn[0]+update][pawn[1]]==None:
@@ -285,6 +305,19 @@ class Highlight:
                 self.legal_moves.append([pawn[0]+update,pawn[1]+1])
             if (pawn[1]-1<=7 and pawn[1]-1>=0 and pawn[0]+update<=7 and pawn[0]+update>=0) and self.board[pawn[0]+update][pawn[1]-1]!= None and not own_piece(pawn[0]+update,pawn[1]-1,self.color,board=self.board):
                 self.legal_moves.append([pawn[0]+update,pawn[1]-1])
+            if (last_piece=='♙' or last_piece=='♟') and ((self.piece == '♙' and self.row==3) or (self.piece == '♟' and self.row==4)):
+                left=self.col-1
+                right=self.col+1
+                color='black' if update==1 else 'white'
+                if self.row==row:
+                    if (left>=0 and left<=7) and (self.board[row][left]!=None) and (not own_piece(row,left,color,self.board) and (left==last_move[1])):
+                        rows=row-1 if color=='white' else row+1
+                        self.legal_moves.append([rows,left])
+                        en_passant=True
+                    if (right>=0 and right<=7) and (self.board[row][right]!=None) and (not own_piece(row,right,color,self.board) and (right==last_move[1])):
+                        rows=row-1 if color=='white' else row+1
+                        self.legal_moves.append([rows,right])
+                        en_passant=True
             return self.legal_moves
     def pawn_attack(self):
         pawn=[self.row,self.col]

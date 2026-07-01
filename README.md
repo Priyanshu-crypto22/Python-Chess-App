@@ -13,9 +13,9 @@ Currently under development
 - Check detection
 - Checkmate Detection 
 - Stalemate Detection
+- En Passant
 
 # Planned Features
-- En Passant
 - AI Opponent
 
 # Technologies Used
