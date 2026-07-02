@@ -437,9 +437,11 @@ class Highlight:
 def all_attacks(piece,board):
     all_moves=[]
     if piece=='♚':
-        pieces=('♖','♘','♗','♕','♗','♘','♖','♙')  #'♔'
+        pieces=('♖','♘','♗','♕','♗','♘','♖','♙','♔')
+        color='white'
     elif piece=='♔':
-        pieces=('♟','♜','♞','♝','♛','♝','♞','♜')  #'♚'
+        pieces=('♟','♜','♞','♝','♛','♝','♞','♜','♚')
+        color='black'
     for check in pieces:
         position=where_piece(check,board)
         for move in position:
