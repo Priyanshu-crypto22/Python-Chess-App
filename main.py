@@ -193,30 +193,29 @@ def move_piece():
         if in_check(white_king_position[0],white_king_position[1],'♔',dummy_board):
             return
     elif move%2!=0:
-        if in_check(black_king_position[0],white_king_position[1],'♚',dummy_board):
+        if in_check(black_king_position[0],black_king_position[1],'♚',dummy_board):
             return
-    if (piece=='♔' and row==7) or (piece=='♚' and row==0):
-        if castling==True:
-            if col==6:
-                temp=board[row][7]
-                board[row][4]=None
-                board[row][7]=None
-                board[row][6]=piece
-                board[row][5]=temp
-                move+=1
-                last_piece=piece
-                last_move=[row,col]
-                return
-            elif col==2:
-                temp=board[row][0]
-                board[row][4]=None
-                board[row][0]=None
-                board[row][1]=piece
-                board[row][2]=temp
-                move+=1
-                last_piece=piece
-                last_move=[row,col]
-                return
+    if (piece=='♔' and row==7 and castling==True and (col==6 or col==2)) or (piece=='♚' and row==0 and castling==True and (col==6 or col==2)):
+        if col==6:
+            temp=board[row][7]
+            board[row][4]=None
+            board[row][7]=None
+            board[row][6]=piece
+            board[row][5]=temp
+            move+=1
+            last_piece=piece
+            last_move=[row,col]
+            return
+        elif col==2:
+            temp=board[row][0]
+            board[row][4]=None
+            board[row][0]=None
+            board[row][1]=piece
+            board[row][2]=temp
+            move+=1
+            last_piece=piece
+            last_move=[row,col]
+            return
     elif (piece=='♙' or piece=='♟') and en_passant==True:
         if selected_square[1]!=col:
             board[selected_square[0]][col]=None
@@ -280,8 +279,8 @@ class Highlight:
         self.board=board
         self.color='white' if piece in white else 'black'
     def king(self):
-        king=[self.row-1,self.col-1]
-        update=[[0,1],[1,0],[0,-1],[-1,0]]
+        king=[self.row+1,self.col-1]
+        update=[[-1,0],[0,1],[1,0],[0,-1]]
         for up in update:
             for _ in range(2):
                 king=[king[0]+up[0],king[1]+up[1]]
@@ -444,11 +443,21 @@ def all_attacks(piece,board):
     for check in pieces:
         position=where_piece(check,board)
         for move in position:
-            moves=Highlight(move[0],move[1],check,board)
-            if check=='♟' or check=='♙':
-                legal_move=moves.pawn_attack()
+            if check=='♚' or check=='♔':
+                legal_move=[]
+                king_location=[row+1,col-1]
+                update=[[-1,0],[0,1],[1,0],[0,-1]]
+                for up in update:
+                    for _ in range(2):
+                        king_location=[king_location[0]+up[0],king_location[1]+up[1]]
+                        if (king_location[0]>=0 and king_location[0]<=7 and king_location[1]<=7 and king_location[1]>=0) and not own_piece(king_location[0],king_location[1],color,board):
+                            legal_move.append(king_location)
             else:
-                legal_move=moves.moves_legal()
+                moves=Highlight(move[0],move[1],check,board)
+                if check=='♟' or check=='♙':
+                    legal_move=moves.pawn_attack()
+                else:
+                    legal_move=moves.moves_legal()
             all_moves.extend(legal_move)
     return all_moves
 
@@ -487,24 +496,42 @@ def highlight(row,col,piece,board):
 def checkmate():
     global board,white_king_position,black_king_position
     if move%2==0:
-        pieces=('♖','♘','♗','♕','♗','♘','♖','♙')  #'♔'
+        pieces=('♖','♘','♗','♕','♗','♘','♖','♙','♔')
         position=white_king_position.copy()
         king='♔'
+        color='white'
     else:
-        pieces=('♟','♜','♞','♝','♛','♝','♞','♜')  #'♚'
+        pieces=('♟','♜','♞','♝','♛','♝','♞','♜','♚')
         position=black_king_position.copy()
         king='♚'
+        color='black'
     for piece in pieces:
         location=where_piece(piece,board)
         for row,col in location:
-            moves=Highlight(row,col,piece,board)
-            legal_moves=moves.moves_legal()
-            for n_row,n_col in legal_moves:
-                dummy_board=[row.copy() for row in board]
-                dummy_board[row][col]=None
-                dummy_board[n_row][n_col]=piece
-                if not in_check(position[0],position[1],king,dummy_board):
-                    return False
+            if piece=='♚' or piece=='♔':
+                legal_moves=[]
+                king_location=[row+1,col-1]
+                update=[[-1,0],[0,1],[1,0],[0,-1]]
+                for up in update:
+                    for _ in range(2):
+                        king_location=[king_location[0]+up[0],king_location[1]+up[1]]
+                        if (king_location[0]>=0 and king_location[0]<=7 and king_location[1]<=7 and king_location[1]>=0) and not own_piece(king_location[0],king_location[1],color,board):
+                            legal_moves.append(king_location)
+                for n_row,n_col in legal_moves:
+                    dummy_board=[row.copy() for row in board]
+                    dummy_board[row][col]=None
+                    dummy_board[n_row][n_col]=piece
+                    if not in_check(n_row,n_col,king,dummy_board):
+                        return False
+            else:
+                moves=Highlight(row,col,piece,board)
+                legal_moves=moves.moves_legal()
+                for n_row,n_col in legal_moves:
+                    dummy_board=[row.copy() for row in board]
+                    dummy_board[row][col]=None
+                    dummy_board[n_row][n_col]=piece
+                    if not in_check(position[0],position[1],king,dummy_board):
+                        return False
     return True
 
 def restart():
