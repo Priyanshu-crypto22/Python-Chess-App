@@ -146,8 +146,8 @@ def is_piece(move):
         return True
     
 def castle(piece):
-    global selected_square,board,castling
-    row=selected_square[0]
+    global board,castling
+    row=0 if piece=='♚' else 7
     moves=[]
     k_side=True
     Q_side=True
@@ -577,26 +577,43 @@ def restart():
 class AI:
     def __init__(self):
         global move
-        self.pieces = ['♜','♞','♝','♛','♚','♝','♞','♜','♟']
+        self.pieces = ['♜','♞','♝','♛','♚','♟']
         self.move=move
+        self.best=-10
+        self.best_piece=''
+        self.to_move=[]
+        self.location=[]
+    def every_move(self):
+        global board
+        for piece in self.pieces:
+            where=where_piece(piece,board)
+            for loc in where:
+                legals=Highlight(loc[0],loc[1],piece,board)
+                moves=legals.moves_legal()
+                for move in moves:
+                    dummy=[row.copy() for row in board]
+                    dummy[loc[0]][loc[1]]=None
+                    dummy[move[0]][move[1]]=piece
+                    self.evaluate(loc,move,piece)
+
+    def evaluate(self,location,move,piece):
+        global board
+        evaluation={'♜':-5,'♞':-3,'♝':-3,'♛':-9,'♟':-1,'♖':5,'♘':3,'♗':3,'♕':9,'♙':1,None:0}
+        points=evaluation[board[move[0]][move[1]]]
+        if points>self.best:
+            self.best=points
+            self.to_move=move
+            self.location=location
+            self.best_piece=piece
+
+            
     def make_move(self):
-        global board,selected_square,row,col
-        while True:
-            random_piece=random.choice(self.pieces)
-            location=where_piece(random_piece,board)
-            location=random.choice(location)
-            print(location,': ',random_piece)
-            selected_square=(location[0],location[1])
-            legal=Highlight(location[0],location[1],random_piece,board)
-            legal_m=legal.moves_legal()
-            if legal_m!=[]:
-                break
-        legal_m=random.choice(legal_m)
-        print(legal_m)
-        row=legal_m[0]
-        col=legal_m[1]
+        global board,selected_square,row,col,move
+        self.every_move()
         canvas.delete('all')
-        move_piece(row,col,random_piece)
+        board[self.location[0]][self.location[1]]=None
+        board[self.to_move[0]][self.to_move[1]]=self.best_piece
+        move+=1
         draw_board()
         draw_piece()
 
@@ -612,3 +629,18 @@ draw_piece()
 
 canvas.bind('<Button-1>',click)
 window.mainloop()
+
+
+
+# while True:
+        #     random_piece=random.choice(self.pieces)
+        #     location=where_piece(random_piece,board)
+        #     location=random.choice(location)
+        #     print(location,': ',random_piece)
+        #     selected_square=(location[0],location[1])
+        #     legal=Highlight(location[0],location[1],random_piece,board)
+        #     legal_m=legal.moves_legal()
+        #     if legal_m!=[]:
+        #         break
+        # legal_m=random.choice(legal_m)
+        # print(legal_m)
