@@ -1,4 +1,5 @@
 import tkinter as tk
+import random
 
 window=tk.Tk()
 window.title("Chess")
@@ -45,16 +46,20 @@ def draw_board():
 
 
 def click(event):
-    global size,selected_square,col,row,board,piece,can_move,legal,white_king_position,black_king_position,move,white,black,stalemated
-    promote=False
+    global row,col,move
     row=event.y//size
     col=event.x//size
+    handle_move(row,col)
+    if move%2!=0:
+        ai=AI()
+        ai.make_move()
+def handle_move(row,col):
+    global size,selected_square,board,piece,can_move,legal,white_king_position,black_king_position,move,white,black,stalemated
+    promote=False
     if selected_square==None:
         selected_square=(row,col)
         piece=board[selected_square[0]][selected_square[1]]
         legal=highlight(row,col,piece,board)
-        
-
     else:
         piece=board[selected_square[0]][selected_square[1]]
         print(row,col)
@@ -94,7 +99,7 @@ def click(event):
             if (piece=='♟' and row==7) or (piece=='♙' and row==0):
                 promote=True
             canvas.delete('all')
-            move_piece()
+            move_piece(row,col,piece)
             draw_board()
             draw_piece()
         if promote:
@@ -140,8 +145,8 @@ def is_piece(move):
     if board[move[0]][move[1]]!=None:
         return True
     
-def castle():
-    global selected_square,piece,board,castling
+def castle(piece):
+    global selected_square,board,castling
     row=selected_square[0]
     moves=[]
     k_side=True
@@ -184,8 +189,8 @@ def own_piece(row,col,color,board):
     else: 
         return False
     
-def move_piece():
-    global selected_square,row,col,board,piece,white_king_position,white_king_moved,black_king_moved,move,last_piece,last_move,en_passant
+def move_piece(row,col,piece):
+    global selected_square,board,white_king_position,white_king_moved,black_king_moved,move,last_piece,last_move,en_passant
     dummy_board=[row.copy() for row in board]
     dummy_board[selected_square[0]][selected_square[1]]=None
     dummy_board[row][col]=piece
@@ -286,7 +291,7 @@ class Highlight:
                 king=[king[0]+up[0],king[1]+up[1]]
                 if (king[0]>=0 and king[0]<=7 and king[1]<=7 and king[1]>=0) and not own_piece(king[0],king[1],self.color,board=self.board):
                     self.legal_moves.append(king)
-        castle_move=castle()
+        castle_move=castle(self.piece)
         if piece=='♔' and white_king_moved==False and not in_check(white_king_position[0],white_king_position[1],'♔',board):
             self.legal_moves.extend(castle_move)
         elif piece=='♚' and black_king_moved==False and not in_check(black_king_position[0],white_king_position[1],'♚',board):
@@ -436,12 +441,12 @@ class Highlight:
 
 def all_attacks(piece,board):
     all_moves=[]
-    if piece=='♚':
-        pieces=('♖','♘','♗','♕','♗','♘','♖','♙','♔')
-        color='white'
-    elif piece=='♔':
-        pieces=('♟','♜','♞','♝','♛','♝','♞','♜','♚')
+    if piece in ('♟','♜','♞','♝','♛','♚'):
+        pieces=('♖','♘','♗','♕','♙','♔')
         color='black'
+    elif piece in ('♕','♗','♘','♖','♙','♔'):
+        pieces=('♟','♜','♞','♝','♛','♚')
+        color='white'
     for check in pieces:
         position=where_piece(check,board)
         for move in position:
@@ -569,6 +574,31 @@ def restart():
     reset.grid(row=1,column=0)
     end.grid(row=1,column=1)
 
+class AI:
+    def __init__(self):
+        global move
+        self.pieces = ['♜','♞','♝','♛','♚','♝','♞','♜','♟']
+        self.move=move
+    def make_move(self):
+        global board,selected_square,row,col
+        while True:
+            random_piece=random.choice(self.pieces)
+            location=where_piece(random_piece,board)
+            location=random.choice(location)
+            print(location,': ',random_piece)
+            selected_square=(location[0],location[1])
+            legal=Highlight(location[0],location[1],random_piece,board)
+            legal_m=legal.moves_legal()
+            if legal_m!=[]:
+                break
+        legal_m=random.choice(legal_m)
+        print(legal_m)
+        row=legal_m[0]
+        col=legal_m[1]
+        canvas.delete('all')
+        move_piece(row,col,random_piece)
+        draw_board()
+        draw_piece()
 
 
 
