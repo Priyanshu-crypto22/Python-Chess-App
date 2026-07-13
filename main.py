@@ -583,41 +583,101 @@ class AI:
         self.best_piece=''
         self.to_move=[]
         self.location=[]
-    def every_move(self):
-        global board
-        for piece in self.pieces:
+        self.best_move=''
+    def every_move(self,color,board):
+        all_legal_moves=[]
+        if color=='white':
+            chess_pieces=('♖','♘','♗','♕''♙','♔')
+        else:
+            chess_pieces=('♜','♞','♝','♛','♚','♟')
+        for piece in chess_pieces:
             where=where_piece(piece,board)
             for loc in where:
                 legals=Highlight(loc[0],loc[1],piece,board)
                 moves=legals.moves_legal()
                 for move in moves:
-                    dummy=[row.copy() for row in board]
-                    dummy[loc[0]][loc[1]]=None
-                    dummy[move[0]][move[1]]=piece
-                    self.evaluate(loc,move,piece)
+                    # dummy=[row.copy() for row in board]
+                    # dummy[loc[0]][loc[1]]=None
+                    # dummy[move[0]][move[1]]=piece
+                    # self.evaluate(loc,move,piece)
+                    move_checking=Moves(piece,loc,move)
+                    all_legal_moves.append(move_checking)
+        return all_legal_moves
 
-    def evaluate(self,location,move,piece):
+
+    def evaluate(self,dummy):
         global board
-        evaluation={'♜':-5,'♞':-3,'♝':-3,'♛':-9,'♟':-1,'♖':5,'♘':3,'♗':3,'♕':9,'♙':1,None:0}
-        points=evaluation[board[move[0]][move[1]]]
-        if points>self.best:
-            self.best=points
-            self.to_move=move
-            self.location=location
-            self.best_piece=piece
+        evaluation={'♜':-5,'♞':-3,'♝':-3,'♛':-9,'♟':-1,'♖':5,'♘':3,'♗':3,'♕':9,'♙':1,None:0,'♔':0,'♚':0}
+        points=0
+        for row in range(8):
+            for col in range(8):
+                points+=evaluation[dummy[row][col]]
+        return points
 
-            
+        # if points>self.best:
+        #     self.best=points
+        #     self.to_move=move
+        #     self.location=location
+        #     self.best_piece=piece
+    def minmax(self,board,depth,maximizing):
+        if depth==0:
+            return self.evaluate(board)
+        if maximizing:
+            best=-float('inf')
+            all=self.every_move('black',board)
+            for move in all:
+                dummy=[row.copy() for row in board]
+                dummy[move.start[0]][move.start[1]]=None
+                dummy[move.end[0]][move.end[1]]=move.piece
+                score=self.minmax(dummy,depth-1,False)
+                best=max(best,score)
+            return best
+        else:
+            best=float('inf')
+            all=self.every_move('white',board)
+            for move in all:
+                dummy=[row.copy() for row in board]
+                dummy[move.start[0]][move.start[1]]=None
+                dummy[move.end[0]][move.end[1]]=move.piece
+                score=self.minmax(dummy,depth-1,True)
+                best=min(best,score)
+            return best
+
+
+
+
     def make_move(self):
         global board,selected_square,row,col,move
-        self.every_move()
-        canvas.delete('all')
-        board[self.location[0]][self.location[1]]=None
-        board[self.to_move[0]][self.to_move[1]]=self.best_piece
+        # self.every_move()
+        # canvas.delete('all')
+        # board[self.location[0]][self.location[1]]=None
+        # board[self.to_move[0]][self.to_move[1]]=self.best_piece
+        # move+=1
+        # draw_board()
+        # draw_piece()
+        best_case=-float('inf')
+        all=self.every_move('black',board)
+        for moves in all:
+            dummy=[row.copy() for row in board]
+            dummy[moves.start[0]][moves.start[1]]=None
+            dummy[moves.end[0]][moves.end[1]]=moves.piece
+            score=self.minmax(dummy,2,True)
+            if score>best_case:
+                best_case=score
+                self.best_move=moves
+        board[moves.start[0]][moves.start[1]]=None
+        board[moves.end[0]][moves.end[1]]=moves.piece
         move+=1
-        draw_board()
-        draw_piece()
 
 
+
+
+
+class Moves:
+    def __init__(self,piece,start,end):
+        self.piece=piece
+        self.start=start
+        self.end=end
 
 create_board()
 draw_board()
