@@ -585,20 +585,39 @@ class AI:
         self.location=[]
         self.best_move=''
     def every_move(self,color,board):
-        all_legal_moves=[]
+        quiet=[]
+        capture=[]
+        check=[]
         if color=='white':
             chess_pieces=('♖','♘','♗','♕''♙','♔')
         else:
-            chess_pieces=('♜','♞','♝','♛','♚','♟')
+            chess_pieces=('♜','♞','♝','♛','♟','♚')
         for piece in chess_pieces:
             where=where_piece(piece,board)
+            dummy=[row.copy() for row in board]
             for loc in where:
                 legals=Highlight(loc[0],loc[1],piece,board)
                 moves=legals.moves_legal()
                 for move in moves:
                     move_checking=Moves(piece,loc,move)
-                    all_legal_moves.append(move_checking)
-        return all_legal_moves
+                    if board[move[0]][move[1]]!=None:
+                        capture.append(move_checking)
+                    else:
+                        king=chess_pieces[-1]
+                        king_location=where_piece(king,board)
+                        temp_piece=dummy[move_checking.end[0]][move_checking.end[1]]
+                        dummy[move_checking.start[0]][move_checking.start[1]]=None
+                        dummy[move_checking.end[0]][move_checking.end[1]]=move_checking.piece
+                        if in_check(king_location[0][0],king_location[0][1],king,dummy):
+                            check.append(move_checking)
+                        else:
+                            quiet.append(move_checking)
+                        dummy[move_checking.start[0]][move_checking.start[1]]=move_checking.piece
+                        dummy[move_checking.end[0]][move_checking.end[1]]=temp_piece
+
+        capture.extend(check)
+        capture.extend(quiet)
+        return capture
 
 
     def evaluate(self,dummy):
