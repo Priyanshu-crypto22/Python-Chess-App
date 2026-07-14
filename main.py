@@ -573,7 +573,7 @@ def restart():
     label.grid(row=0,column=0,columnspan=2)
     reset.grid(row=1,column=0)
     end.grid(row=1,column=1)
-
+node=0
 class AI:
     def __init__(self):
         global move
@@ -608,7 +608,9 @@ class AI:
             for col in range(8):
                 points+=evaluation[dummy[row][col]]
         return points
-    def minmax(self,board,depth,maximizing):
+    def minmax(self,board,depth,maximizing,alpha,beta):
+        global node
+        node+=1
         if depth==0:
             return self.evaluate(board)
         if maximizing:
@@ -618,8 +620,11 @@ class AI:
                 dummy=[row.copy() for row in board]
                 dummy[move.start[0]][move.start[1]]=None
                 dummy[move.end[0]][move.end[1]]=move.piece
-                score=self.minmax(dummy,depth-1,False)
+                score=self.minmax(dummy,depth-1,False,alpha,beta)
                 best=max(best,score)
+                alpha=max(alpha,score)
+                if beta<=alpha:
+                    break
             return best
         else:
             best=float('inf')
@@ -628,28 +633,32 @@ class AI:
                 dummy=[row.copy() for row in board]
                 dummy[move.start[0]][move.start[1]]=None
                 dummy[move.end[0]][move.end[1]]=move.piece
-                score=self.minmax(dummy,depth-1,True)
+                score=self.minmax(dummy,depth-1,True,alpha,beta)
                 best=min(best,score)
+                beta=min(beta,score)
+                if alpha>=beta:
+                    break
             return best
 
 
 
 
     def make_move(self):
-        global board,selected_square,row,col,move
+        global board,selected_square,row,col,move,node
         best_case=-float('inf')
         all=self.every_move('black',board)
         for moves in all:
             dummy=[row.copy() for row in board]
             dummy[moves.start[0]][moves.start[1]]=None
             dummy[moves.end[0]][moves.end[1]]=moves.piece
-            score=self.minmax(dummy,3,False)
+            score=self.minmax(dummy,3,False,-float('inf'),float('inf'))
             if score>best_case:
                 best_case=score
                 self.best_move=moves
         board[self.best_move.start[0]][self.best_move.start[1]]=None
         board[self.best_move.end[0]][self.best_move.end[1]]=self.best_move.piece
         move+=1
+        print(node)
 
 
 
