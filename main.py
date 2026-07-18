@@ -588,37 +588,28 @@ class AI:
         quiet=[]
         capture=[]
         check=[]
+        dummy=[row.copy() for row in board]
         if color=='white':
             chess_pieces=('♖','♘','♗','♕''♙','♔')
+            king='♚'
         else:
             chess_pieces=('♜','♞','♝','♛','♟','♚')
+            king='♔'
         for piece in chess_pieces:
             where=where_piece(piece,board)
-            dummy=[row.copy() for row in board]
             for loc in where:
                 legals=Highlight(loc[0],loc[1],piece,board)
                 moves=legals.moves_legal()
                 for move in moves:
                     move_checking=Moves(piece,loc,move)
                     if board[move[0]][move[1]]!=None:
-                        capture.append(move_checking)
+                        if board[move[0]][move[1]]!=king:
+                            capture.append(move_checking)
                     else:
-                        king=chess_pieces[-1]
-                        king_location=where_piece(king,board)
-                        temp_piece=dummy[move_checking.end[0]][move_checking.end[1]]
-                        dummy[move_checking.start[0]][move_checking.start[1]]=None
-                        dummy[move_checking.end[0]][move_checking.end[1]]=move_checking.piece
-                        if in_check(king_location[0][0],king_location[0][1],king,dummy):
-                            check.append(move_checking)
-                        else:
-                            quiet.append(move_checking)
-                        dummy[move_checking.start[0]][move_checking.start[1]]=move_checking.piece
-                        dummy[move_checking.end[0]][move_checking.end[1]]=temp_piece
+                        quiet.append(move_checking)
 
-        capture.extend(check)
         capture.extend(quiet)
         return capture
-
 
     def evaluate(self,dummy):
         evaluation={'♜':5,'♞':3,'♝':3,'♛':9,'♟':1,'♖':-5,'♘':-3,'♗':-3,'♕':-9,'♙':-1,None:0,'♔':0,'♚':0}
@@ -627,8 +618,10 @@ class AI:
             for col in range(8):
                 points+=evaluation[dummy[row][col]]
         return points
+    
     def minmax(self,board,depth,maximizing,alpha,beta):
         global node
+        dummy=[row.copy() for row in board]
         node+=1
         if depth==0:
             return self.evaluate(board)
@@ -636,10 +629,12 @@ class AI:
             best=-float('inf')
             all=self.every_move('black',board)
             for move in all:
-                dummy=[row.copy() for row in board]
+                temp_piece=dummy[move.end[0]][move.end[1]]
                 dummy[move.start[0]][move.start[1]]=None
                 dummy[move.end[0]][move.end[1]]=move.piece
                 score=self.minmax(dummy,depth-1,False,alpha,beta)
+                dummy[move.start[0]][move.start[1]]=move.piece
+                dummy[move.end[0]][move.end[1]]=temp_piece
                 best=max(best,score)
                 alpha=max(alpha,score)
                 if beta<=alpha:
@@ -649,19 +644,18 @@ class AI:
             best=float('inf')
             all=self.every_move('white',board)
             for move in all:
-                dummy=[row.copy() for row in board]
+                temp_piece=dummy[move.end[0]][move.end[1]]
                 dummy[move.start[0]][move.start[1]]=None
                 dummy[move.end[0]][move.end[1]]=move.piece
                 score=self.minmax(dummy,depth-1,True,alpha,beta)
+                dummy[move.start[0]][move.start[1]]=move.piece
+                dummy[move.end[0]][move.end[1]]=temp_piece
                 best=min(best,score)
                 beta=min(beta,score)
                 if alpha>=beta:
                     break
             return best
-
-
-
-
+        
     def make_move(self):
         global board,selected_square,row,col,move,node
         best_case=-float('inf')
@@ -670,7 +664,7 @@ class AI:
             dummy=[row.copy() for row in board]
             dummy[moves.start[0]][moves.start[1]]=None
             dummy[moves.end[0]][moves.end[1]]=moves.piece
-            score=self.minmax(dummy,3,False,-float('inf'),float('inf'))
+            score=self.minmax(dummy,4,False,-float('inf'),float('inf'))
             if score>best_case:
                 best_case=score
                 self.best_move=moves
